@@ -1,0 +1,25 @@
+/* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa; /* Light gray background */
+    color: #333; /* Dark text color */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* Ensure the body takes up the full viewport height */
+    margin: 0;
+}
+
+/* Main Content Area */
+.container {
+    flex: 1; /* Allow the main content to grow and push the footer to the bottom */
+}
+
+/* Footer Styles */
+footer {
+    background-color: #343a40; /* Dark footer background */
+    color: #fff; /* White text */
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: auto; /* Push the footer to the bottom */
+}
