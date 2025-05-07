@@ -22,11 +22,15 @@
             </p>
             <p><strong>Images:</strong></p>
             <div class="row">
-                @foreach ($device->images as $image)
-                    <div class="col-md-3">
-                        <img src="{{ asset('storage/' . $image) }}" alt="Device Image" class="img-fluid rounded">
-                    </div>
-                @endforeach
+                @if (!empty($device->images) && is_array($device->images))
+                    @foreach ($device->images as $image)
+                        <div class="col-md-3">
+                            <img src="{{ asset('storage/' . $image) }}" alt="Device Image" class="img-fluid rounded">
+                        </div>
+                    @endforeach
+                @else
+                    <p>No images available.</p>
+                @endif
             </div>
         </div>
         <div class="card-footer">

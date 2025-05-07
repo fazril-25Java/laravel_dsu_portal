@@ -1,95 +1,101 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Device;
 use Illuminate\Http\Request;
+use App\Models\Device;
+use Illuminate\Support\Facades\File;
 
 class DeviceController extends Controller
 {
-    /**
-     * Display a listing of the devices.
-     */
     public function index()
     {
         $devices = Device::all();
         return view('admin.devices.index', compact('devices'));
     }
 
-    /**
-     * Show the form for creating a new device.
-     */
     public function create()
     {
         return view('admin.devices.create');
     }
 
-    /**
-     * Store a newly created device in storage.
-     */
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:255',
-        'type' => 'required|string|max:255',
-        'description' => 'nullable|string',
-        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048', // Validate the image
-        'status' => 'required|string|in:active,inactive',
-    ]);
-
-    if ($request->hasFile('image')) {
-        // Store the image in the 'public/images' directory and get the path
-        $imagePath = $request->file('image')->store('images', 'public');
-        $validated['image'] = $imagePath; // Save the path to the database
-    }
-
-    Device::create($validated); // Save the device with the image path
-
-    return redirect()->route('admin.devices.index')->with('success', 'Device created successfully.');
-}
-
-    /**
-     * Display the specified device.
-     */
-    public function show(Device $device)
     {
-        return view('admin.devices.show', compact('device'));
-    }
-
-    /**
-     * Show the form for editing the specified device.
-     */
-    public function edit(Device $device)
-    {
-        return view('admin.devices.edit', compact('device'));
-    }
-
-    /**
-     * Update the specified device in storage.
-     */
-    public function update(Request $request, Device $device)
-    {
-        $validated = $request->validate([
+        $request->validate([
             'name' => 'required|string|max:255',
             'type' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'images' => 'nullable|array',
+            'description' => 'nullable|string|max:1000',
+            'image' => 'nullable|mimes:png,jpg,jpeg,webp',
             'status' => 'required|string|in:active,inactive',
         ]);
 
-        $device->update($validated);
+        $filename = null;
+
+        if ($request->has('image')) {
+            $file = $request->file('image');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path = 'uploads/devices/';
+            $file->move($path, $filename);
+        }
+
+        Device::create([
+            'name' => $request->name,
+            'type' => $request->type,
+            'description' => $request->description,
+            'status' => $request->status,
+            'image' => $filename ? $path . $filename : null,
+        ]);
+
+        return redirect()->route('admin.devices.create')->with('success', 'Device created successfully.');
+    }
+
+
+    public function edit($id)
+    {
+        $device = Device::findOrFail($id);
+        return view('admin.devices.edit', compact('device'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'image' => 'nullable|mimes:png,jpg,jpeg,webp',
+            'status' => 'required|string|in:active,inactive',
+        ]);
+
+        $device = Device::findOrFail($id);
+
+        if ($request->has('image')) {
+            if (File::exists($device->image)) {
+                File::delete($device->image);
+            }
+
+            $file = $request->file('image');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path = 'uploads/devices/';
+            $file->move($path, $filename);
+
+            $device->update([
+                'name' => $request->name,
+                'type' => $request->type,
+                'description' => $request->description,
+                'status' => $request->status,
+                'image' => $path . $filename,
+            ]);
+        } else {
+            $device->update($request->only(['name', 'type', 'description', 'status']));
+        }
 
         return redirect()->route('admin.devices.index')->with('success', 'Device updated successfully.');
     }
 
-    /**
-     * Remove the specified device from storage.
-     */
-    public function destroy(Device $device)
+    public function deactivate($id)
     {
-        $device->delete();
-
-        return redirect()->route('admin.devices.index')->with('success', 'Device deleted successfully.');
+        $device = Device::findOrFail($id);
+        $device->update(['status' => 'inactive']);
+        return redirect()->route('admin.devices.index')->with('success', 'Device deactivated successfully.');
     }
 }
